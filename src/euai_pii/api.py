@@ -305,6 +305,14 @@ def available_danish_model_entities(labels) -> set[str]:
     }
 
 
+def missing_profile_entities(categories: set[str], model_labels, recognizer_entities: list[set[str]]) -> set[str]:
+    available = available_danish_model_entities(model_labels)
+    ner_entities = set(DANISH_ENTITY_LABELS)
+    for entities in recognizer_entities:
+        available.update(entities - ner_entities)
+    return categories - available
+
+
 def load_runtime_from_environment() -> ScreeningRuntime | None:
     config_path = os.environ.get("SCREENING_CONFIG_PATH")
     credentials_path = os.environ.get("SCREENING_CREDENTIALS_PATH")
@@ -352,12 +360,12 @@ def load_runtime_from_environment() -> ScreeningRuntime | None:
         for recognizer in custom:
             engine.registry.add_recognizer(recognizer)
         categories = frozenset(profile_config["categories"])
-        available = available_danish_model_entities(model_labels)
+        recognizer_entities = []
         for recognizer in engine.registry.recognizers:
             if "da" not in recognizer.supported_language:
                 continue
-            available.update(recognizer.get_supported_entities())
-        missing = categories - available
+            recognizer_entities.append(set(recognizer.get_supported_entities()))
+        missing = missing_profile_entities(categories, model_labels, recognizer_entities)
         if missing:
             raise ValueError(f"required recognizers unavailable: {sorted(missing)}")
         profiles[profile_id] = Profile(

@@ -13,6 +13,7 @@ from euai_pii.api import (
     ScreeningRuntime,
     available_danish_model_entities,
     create_app,
+    missing_profile_entities,
 )
 from euai_pii.detectors import CprRecognizer
 from euai_pii.screening import Profile, ScreeningService
@@ -234,6 +235,11 @@ def test_openapi_is_available_programmatically_but_not_publicly_exposed():
 def test_startup_model_availability_is_derived_from_actual_labels():
     assert available_danish_model_entities(["PER", "ORG"]) == {"PERSON"}
     assert "LOCATION" not in available_danish_model_entities(["PER", "ORG"])
+    assert missing_profile_entities(
+        {"PERSON", "LOCATION", "EMAIL_ADDRESS"},
+        ["PER"],
+        [{"PERSON", "LOCATION", "EMAIL_ADDRESS"}],
+    ) == {"LOCATION"}
 
 
 class SlowDetector:
