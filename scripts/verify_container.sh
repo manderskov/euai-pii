@@ -98,6 +98,40 @@ async def verify_worker_boundary():
 
 asyncio.run(verify_worker_boundary())
 PY
+ $compose exec -T screening python - <<'PY'
+import http.client
+import json
+import socket
+import time
+
+text = "CPR 010100-1234 " * 5000
+body = json.dumps({"mode": "redact", "profile_id": "da-personal-v1", "language": "da", "text": text}).encode()
+request = (
+    b"POST /v1/screen HTTP/1.1\r\n"
+    b"Host: 127.0.0.1:8080\r\n"
+    b"Authorization: Bearer replace-with-a-provisioned-secret\r\n"
+    b"Content-Type: application/json\r\n"
+    + f"Content-Length: {len(body)}\r\n\r\n".encode()
+    + body
+)
+connection = socket.create_connection(("127.0.0.1", 8080), timeout=3)
+connection.sendall(request)
+connection.shutdown(socket.SHUT_RDWR)
+connection.close()
+time.sleep(12)
+
+followup = http.client.HTTPConnection("127.0.0.1", 8080, timeout=15)
+followup.request("POST", "/v1/screen", body=json.dumps({
+    "mode": "block", "profile_id": "da-identifiers-v1", "language": "da", "text": "safe"
+}), headers={
+    "Authorization": "Bearer replace-with-a-provisioned-secret",
+    "Content-Type": "application/json",
+})
+response = followup.getresponse()
+assert response.status == 200
+assert json.loads(response.read())["action"] == "allowed"
+followup.close()
+PY
 logs=$($compose logs --no-log-prefix screening)
 case "$logs" in
   *SYNTHETIC_SECRET_VALUE*|*010100-1234*) exit 1 ;;
