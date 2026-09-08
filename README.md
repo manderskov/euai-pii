@@ -32,8 +32,8 @@ Create a Python 3.12 environment and install the pinned service dependencies:
 
 ```sh
 python3 -m venv .venv
-.venv/bin/pip install -e '.[dev]'
-.venv/bin/pip install https://github.com/explosion/spacy-models/releases/download/da_core_news_md-3.8.0/da_core_news_md-3.8.0-py3-none-any.whl
+.venv/bin/pip install -r requirements.lock
+.venv/bin/pip install --no-deps -e '.[dev]'
 ```
 
 Run the deterministic tests and the synthetic detector evaluation:

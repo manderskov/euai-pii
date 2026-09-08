@@ -22,8 +22,9 @@ Command:
 The command evaluates 225 deterministic synthetic examples, including Danish
 characters, identifiers, names, locations, invalid dates, and prefixed/unprefixed
 CVR lookalikes. It also measures 1,000, 10,000, and 100,000 Unicode-character
-inputs. The complete generated JSON report is intentionally local because its
-timings and RSS are host-specific.
+inputs, starts a fresh spawned detector process for cold-start timing, and runs a
+10-second subprocess termination probe. The complete generated JSON report is
+intentionally local because its timings and RSS are host-specific.
 
 ## Observed Run
 
@@ -39,10 +40,14 @@ fixture as `PERSON`, and missed two location fixtures. These are concrete
 false-positive and missed-span examples requiring threshold/profile review
 before production acceptance. Message-level false blocks in this fixture set: 0.
 
-Observed maximum timings on this host were approximately 11 ms, 87 ms, and
-987 ms for 1k, 10k, and 100k characters respectively. Maximum process RSS was
-approximately 1.13 GiB. These measurements are baseline evidence only and do
-not establish a deployment resource budget.
+Observed maximum timings on this host were approximately 12 ms, 91 ms, and
+1,010 ms for 1k, 10k, and 100k characters respectively. A fresh spawned process
+completed cold startup and processing in approximately 2.31 seconds. Maximum
+process RSS was approximately 1.13 GiB. These measurements are baseline
+evidence only and do not establish a deployment resource budget. The synthetic
+timeout probe terminated the worker at approximately 10.01 seconds and reported
+`worker_was_terminated: true`, demonstrating the enforced 10-second process
+boundary.
 
 ## Acceptance Boundary
 

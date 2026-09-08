@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import multiprocessing
 import platform
 import resource
 import statistics
@@ -22,6 +23,51 @@ from euai_pii.detectors import CprRecognizer, CvrRecognizer, DanishNerRecognizer
 class Example:
     text: str
     expected: tuple[str, ...]
+
+
+def _detector_worker(model_name: str | None, text: str, result_queue) -> None:
+    """Load a fresh detector process and run one bounded measurement."""
+
+    from euai_pii.detectors import CprRecognizer, CvrRecognizer, DanishNerRecognizer
+
+    recognizers = [CprRecognizer(), CvrRecognizer()]
+    if model_name:
+        import spacy
+
+        recognizers.append(DanishNerRecognizer(spacy.load(model_name)))
+    started = time.perf_counter()
+    for recognizer in recognizers:
+        recognizer.analyze(text, recognizer.supported_entities)
+    result_queue.put((time.perf_counter() - started) * 1000)
+
+
+def _timeout_worker(model_name: str | None, text: str, result_queue) -> None:
+    """Simulate work that exceeds the service's maximum request deadline."""
+
+    _detector_worker(model_name, text, result_queue)
+    time.sleep(11)
+
+
+def _run_process(target, args: tuple, timeout_seconds: float) -> dict[str, object]:
+    context = multiprocessing.get_context("spawn")
+    result_queue = context.Queue()
+    process = context.Process(target=target, args=(*args, result_queue))
+    started = time.perf_counter()
+    process.start()
+    process.join(timeout_seconds)
+    elapsed_ms = (time.perf_counter() - started) * 1000
+    terminated = process.is_alive()
+    if terminated:
+        process.terminate()
+        process.join(5)
+    result = result_queue.get_nowait() if not result_queue.empty() else None
+    result_queue.close()
+    return {
+        "elapsed_ms": elapsed_ms,
+        "worker_result_ms": result,
+        "timed_out": terminated,
+        "exit_code": process.exitcode,
+    }
 
 
 def synthetic_examples() -> list[Example]:
@@ -103,6 +149,16 @@ def evaluate(model_name: str | None = None) -> dict[str, object]:
             "max_ms": max(timings),
             "within_10_second_deadline": max(timings) < 10000,
         }
+    cold_start = _run_process(
+        _detector_worker,
+        (model_name, "Kontakt på 010100-1234 og CVR 12345678. " * 20),
+        10,
+    )
+    timeout_probe = _run_process(
+        _timeout_worker,
+        (model_name, "Kontakt på 010100-1234 og CVR 12345678. "),
+        10,
+    )
     for stats in category_stats.values():
         stats["precision"] = (
             stats["true_positive"] / (stats["true_positive"] + stats["false_positive"])
@@ -130,6 +186,12 @@ def evaluate(model_name: str | None = None) -> dict[str, object]:
         ),
         "missed_examples": missed_examples,
         "resource": {"max_rss_kib": resource.getrusage(resource.RUSAGE_SELF).ru_maxrss},
+        "cold_start": cold_start,
+        "timeout_probe": {
+            **timeout_probe,
+            "deadline_seconds": 10,
+            "worker_was_terminated": timeout_probe["timed_out"],
+        },
         "timing_ms": timing_results,
         "ner": {
             "status": "complete" if model_name else "not run",
