@@ -21,7 +21,14 @@
         "CREDIT_CARD": 0.5,
         "CONFIGURED_PATTERN": 1.0
       },
-      "patterns": []
+      "patterns": [
+        {
+          "rule_id": "example-protected-term",
+          "entity_type": "CONFIGURED_PATTERN",
+          "expression": "EXAMPLE_PROTECTED_TERM",
+          "case_sensitive": true
+        }
+      ]
     },
     "da-personal-v1": {
       "allowed_modes": ["block", "redact"],
@@ -47,7 +54,14 @@
         "PERSON": 0.85,
         "LOCATION": 0.85
       },
-      "patterns": []
+      "patterns": [
+        {
+          "rule_id": "example-protected-term",
+          "entity_type": "CONFIGURED_PATTERN",
+          "expression": "EXAMPLE_PROTECTED_TERM",
+          "case_sensitive": true
+        }
+      ]
     }
   }
 }

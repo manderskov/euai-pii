@@ -1,3 +1,4 @@
+import asyncio
 import time
 from concurrent.futures import ThreadPoolExecutor
 from unittest.mock import patch
@@ -217,7 +218,11 @@ def test_openapi_is_available_programmatically_but_not_publicly_exposed():
     application = create_app(make_runtime())
     assert "/v1/screen" in application.openapi()["paths"]
     with TestClient(application) as http:
-        assert http.get("/openapi.json").status_code == 404
+        assert http.get("/openapi.json").status_code == 401
+        schema = http.get("/openapi.json", headers={"Authorization": "Bearer test-secret"})
+        assert schema.status_code == 200
+        assert "/v1/screen" in schema.json()["paths"]
+        assert http.get("/docs").status_code == 404
 
 
 class SlowDetector:
@@ -255,3 +260,22 @@ def test_saturation_rejects_the_second_request():
                 )
             )
     assert sorted(response.status_code for response in responses) == [200, 503]
+
+
+def test_cancellation_restarts_worker_before_next_request():
+    async def scenario():
+        runtime = make_runtime(SlowDetector(), deadline_seconds=1)
+        payload = __import__("euai_pii.api", fromlist=["ScreenRequest"]).ScreenRequest(**request_body())
+        task = asyncio.create_task(runtime.screen(payload, "test-secret"))
+        await asyncio.sleep(0.01)
+        task.cancel()
+        try:
+            await task
+        except asyncio.CancelledError:
+            pass
+        result = await runtime.screen(payload, "test-secret")
+        runtime.close()
+        return result
+
+    result = asyncio.run(scenario())
+    assert result["action"] == "allowed"

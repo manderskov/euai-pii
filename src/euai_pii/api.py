@@ -18,7 +18,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
 from .screening import Profile, ScreeningFailure, ScreeningService, constant_time_credential_match
-from .detectors import ConfiguredPattern, ConfiguredPatternRecognizer, CprRecognizer, CvrRecognizer
+from .detectors import ConfiguredPattern, ConfiguredPatternRecognizer, CprRecognizer, CvrRecognizer, validate_danish_labels
 from .screening import PresidioDetector
 
 MAX_BODY_BYTES = 1024 * 1024
@@ -97,6 +97,9 @@ class CredentialStore:
             if constant_time_credential_match(credential, (binding.credential,)):
                 allowed = profile_id in binding.profiles and mode in binding.modes or allowed
         return allowed
+
+    def authenticate(self, credential: str) -> bool:
+        return any(constant_time_credential_match(credential, (binding.credential,)) for binding in self.bindings)
 
 
 class LimitBodyMiddleware:
@@ -199,11 +202,13 @@ class WorkerProcess:
             raise ScreeningFailure()
 
     def run(self, text: str, profile_id: str, mode: str) -> dict[str, object]:
-        if self.process is None or not self.process.is_alive():
+        process = self.process
+        connection = self.connection
+        if process is None or connection is None or not process.is_alive():
             raise ScreeningFailure()
         try:
-            self.connection.send((text, profile_id, mode))
-            result = self.connection.recv()
+            connection.send((text, profile_id, mode))
+            result = connection.recv()
         except (BrokenPipeError, EOFError, OSError) as error:
             raise ScreeningFailure() from error
         if result[0] == "ok":
@@ -266,6 +271,10 @@ class ScreeningRuntime:
                 self.ready = False
                 self.restart_worker()
                 raise ScreeningFailure() from error
+            except asyncio.CancelledError:
+                self.ready = False
+                self.restart_worker()
+                raise
             except ScreeningFailure:
                 raise
             except Exception as error:
@@ -288,7 +297,7 @@ def load_runtime_from_environment() -> ScreeningRuntime | None:
     configuration = _load_json(config_path)
     credentials_config = _load_json(credentials_path)
     from presidio_analyzer import AnalyzerEngine
-    from presidio_analyzer.predefined_recognizers import PhoneRecognizer
+    from presidio_analyzer.predefined_recognizers import CreditCardRecognizer, EmailRecognizer, IbanRecognizer, PhoneRecognizer
     from presidio_analyzer.nlp_engine import NerModelConfiguration, SpacyNlpEngine
 
     model_name = configuration.get("model_name", "da_core_news_md")
@@ -300,6 +309,7 @@ def load_runtime_from_environment() -> ScreeningRuntime | None:
         ),
     )
     nlp_engine.load()
+    validate_danish_labels(nlp_engine.get_nlp("da").get_pipe("ner").labels)
     profiles: dict[str, Profile] = {}
     for profile_id, profile_config in configuration.get("profiles", {}).items():
         patterns = tuple(
@@ -314,7 +324,10 @@ def load_runtime_from_environment() -> ScreeningRuntime | None:
         custom = (
             CprRecognizer(),
             CvrRecognizer(),
+            EmailRecognizer(supported_language="da"),
             PhoneRecognizer(supported_language="da", supported_regions=("DK",)),
+            IbanRecognizer(supported_language="da"),
+            CreditCardRecognizer(supported_language="da"),
         )
         if patterns:
             custom += (ConfiguredPatternRecognizer(list(patterns)),)
@@ -322,6 +335,14 @@ def load_runtime_from_environment() -> ScreeningRuntime | None:
         for recognizer in custom:
             engine.registry.add_recognizer(recognizer)
         categories = frozenset(profile_config["categories"])
+        available = set(nlp_engine.get_supported_entities())
+        for recognizer in engine.registry.recognizers:
+            if "da" not in recognizer.supported_language:
+                continue
+            available.update(recognizer.get_supported_entities())
+        missing = categories - available
+        if missing:
+            raise ValueError(f"required recognizers unavailable: {sorted(missing)}")
         profiles[profile_id] = Profile(
             profile_id=profile_id,
             allowed_modes=frozenset(profile_config["allowed_modes"]),
@@ -410,6 +431,14 @@ def create_app(runtime: ScreeningRuntime | None = None) -> FastAPI:
         if app.state.runtime is None or not app.state.runtime.ready:
             raise ScreeningFailure()
         return {"status": "ready"}
+
+    @app.get("/openapi.json", include_in_schema=False)
+    async def openapi(request: Request):
+        runtime = app.state.runtime
+        authorization = request.headers.get("authorization", "")
+        if runtime is None or not authorization.startswith("Bearer ") or not runtime.credentials.authenticate(authorization[7:]):
+            raise ScreeningFailure("unauthorized", 401)
+        return app.openapi()
 
     @app.post("/v1/screen", response_model=ScreenResponse)
     async def screen(request: Request, payload: ScreenRequest):

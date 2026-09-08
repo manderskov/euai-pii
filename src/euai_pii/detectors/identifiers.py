@@ -21,7 +21,7 @@ def _valid_cpr_date(value: str) -> bool:
     day = int(value[:2])
     month = int(value[2:4])
     year_suffix = int(value[4:6])
-    if not 1 <= month <= 12:
+    if not 1 <= day <= 31 or not 1 <= month <= 12:
         return False
 
     # CPR's century is not encoded in this v1 recognizer. Accept a date when

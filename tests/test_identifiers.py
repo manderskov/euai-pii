@@ -14,7 +14,7 @@ def test_cpr_accepts_supported_formats_and_danish_characters_around_value():
 
 
 def test_cpr_accepts_nonbreaking_space_and_rejects_invalid_dates_and_long_numbers():
-    text = "010100\u00a01234 321399-1234 0013001234 10101001234"
+    text = "010100\u00a01234 321399-1234 000100-1234 0013001234 10101001234"
     results = spans(CprRecognizer(), text, "DK_CPR")
     assert [text[start:end] for start, end, _ in results] == ["010100\u00a01234"]
 
