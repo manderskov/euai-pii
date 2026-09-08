@@ -160,6 +160,9 @@ def _worker_loop(connection, service: ScreeningService) -> None:
             return
         if payload is None:
             return
+        if payload == ("warmup",):
+            connection.send(("ready", bool(service.profiles)))
+            continue
         text, profile_id, mode = payload
         try:
             profile = service.profiles[profile_id]
@@ -185,6 +188,15 @@ class WorkerProcess:
         child.close()
         self.connection = parent
         self.process = process
+        try:
+            self.connection.send(("warmup",))
+            result = self.connection.recv()
+        except (BrokenPipeError, EOFError, OSError) as error:
+            self.close()
+            raise ScreeningFailure() from error
+        if result != ("ready", True):
+            self.close()
+            raise ScreeningFailure()
 
     def run(self, text: str, profile_id: str, mode: str) -> dict[str, object]:
         if self.process is None or not self.process.is_alive():
