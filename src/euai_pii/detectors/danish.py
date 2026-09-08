@@ -40,6 +40,7 @@ class DanishNerRecognizer(EntityRecognizer):
         super().__init__(
             supported_entities=sorted(set(self.label_mapping.values())),
             name="Danish NER recognizer",
+            supported_language="da",
         )
 
     def analyze(self, text: str, entities: list[str], nlp_artifacts=None) -> list[RecognizerResult]:

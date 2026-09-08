@@ -43,6 +43,7 @@ class ConfiguredPatternRecognizer(EntityRecognizer):
         super().__init__(
             supported_entities=sorted({pattern.entity_type for pattern in patterns}),
             name="configured pattern recognizer",
+            supported_language="da",
         )
 
     def analyze(self, text: str, entities: list[str], nlp_artifacts=None) -> list[RecognizerResult]:
