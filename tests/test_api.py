@@ -7,7 +7,13 @@ from uuid import UUID
 from fastapi.testclient import TestClient
 from presidio_analyzer import RecognizerResult
 
-from euai_pii.api import CredentialBinding, CredentialStore, ScreeningRuntime, create_app
+from euai_pii.api import (
+    CredentialBinding,
+    CredentialStore,
+    ScreeningRuntime,
+    available_danish_model_entities,
+    create_app,
+)
 from euai_pii.detectors import CprRecognizer
 from euai_pii.screening import Profile, ScreeningService
 
@@ -223,6 +229,11 @@ def test_openapi_is_available_programmatically_but_not_publicly_exposed():
         assert schema.status_code == 200
         assert "/v1/screen" in schema.json()["paths"]
         assert http.get("/docs").status_code == 404
+
+
+def test_startup_model_availability_is_derived_from_actual_labels():
+    assert available_danish_model_entities(["PER", "ORG"]) == {"PERSON"}
+    assert "LOCATION" not in available_danish_model_entities(["PER", "ORG"])
 
 
 class SlowDetector:

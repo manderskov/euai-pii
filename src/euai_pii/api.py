@@ -18,7 +18,14 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
 from .screening import Profile, ScreeningFailure, ScreeningService, constant_time_credential_match
-from .detectors import ConfiguredPattern, ConfiguredPatternRecognizer, CprRecognizer, CvrRecognizer, validate_danish_labels
+from .detectors import (
+    DANISH_ENTITY_LABELS,
+    ConfiguredPattern,
+    ConfiguredPatternRecognizer,
+    CprRecognizer,
+    CvrRecognizer,
+    validate_danish_labels,
+)
 from .screening import PresidioDetector
 
 MAX_BODY_BYTES = 1024 * 1024
@@ -289,6 +296,15 @@ def _load_json(path: str) -> dict:
     return value
 
 
+def available_danish_model_entities(labels) -> set[str]:
+    label_set = set(labels)
+    return {
+        entity_type
+        for entity_type, aliases in DANISH_ENTITY_LABELS.items()
+        if label_set.intersection(aliases)
+    }
+
+
 def load_runtime_from_environment() -> ScreeningRuntime | None:
     config_path = os.environ.get("SCREENING_CONFIG_PATH")
     credentials_path = os.environ.get("SCREENING_CREDENTIALS_PATH")
@@ -309,7 +325,8 @@ def load_runtime_from_environment() -> ScreeningRuntime | None:
         ),
     )
     nlp_engine.load()
-    validate_danish_labels(nlp_engine.get_nlp("da").get_pipe("ner").labels)
+    model_labels = nlp_engine.get_nlp("da").get_pipe("ner").labels
+    validate_danish_labels(model_labels)
     profiles: dict[str, Profile] = {}
     for profile_id, profile_config in configuration.get("profiles", {}).items():
         patterns = tuple(
@@ -335,7 +352,7 @@ def load_runtime_from_environment() -> ScreeningRuntime | None:
         for recognizer in custom:
             engine.registry.add_recognizer(recognizer)
         categories = frozenset(profile_config["categories"])
-        available = set(nlp_engine.get_supported_entities())
+        available = available_danish_model_entities(model_labels)
         for recognizer in engine.registry.recognizers:
             if "da" not in recognizer.supported_language:
                 continue
