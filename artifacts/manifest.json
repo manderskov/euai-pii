@@ -1,0 +1,23 @@
+{
+  "runtime": {
+    "python": "3.12",
+    "platform": "CPU Linux"
+  },
+  "dependencies": {
+    "presidio-analyzer": "2.2.364",
+    "spacy": "3.8.16",
+    "pytest": "8.4.2"
+  },
+  "danish_model": {
+    "name": "da_core_news_md",
+    "version": "3.8.0",
+    "source": "https://github.com/explosion/spacy-models/releases/download/da_core_news_md-3.8.0/da_core_news_md-3.8.0-py3-none-any.whl",
+    "license": "CC BY-SA 4.0",
+    "runtime_download": false,
+    "acceptance": "Pending Gate 1 domain evaluation"
+  },
+  "library_licenses": {
+    "presidio-analyzer": "MIT",
+    "spaCy": "MIT"
+  }
+}
