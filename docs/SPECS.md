@@ -85,4 +85,4 @@ acceptance gate before API completion and its service acceptance gate before
 consumer integration. Independent Reviewer approval and human gates remain
 separate from merge or deployment authorization.
 
-Implementation issues have not been created by this documentation transfer.
+Implementation issues are tracked as #1, #2, and #3 in the [euai-pii repository](https://github.com/manderskov/euai-pii/issues). Preserve F-007's Step 1 → Gate 1 → Step 2 → Gate 2 → Step 3 sequence; independent Reviewer approval and human gates remain separate from merge or deployment authorization.

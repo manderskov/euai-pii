@@ -242,7 +242,13 @@ Proposed sequence only; no implementation begins before resolving design decisio
 
 ## Implementation Issues
 
-Implementation issues not yet created. Create them in manderskov/euai-pii after resolution of the remaining design decisions. Preserve Step 1 → Gate 1 → Steps 2–3 → Gate 2 dependencies. Each issue requires its own branch/PR and independent Reviewer approval; approval does not authorize merge or deployment.
+| Plan Step | Assigned Skill | GitHub Issue | Status Source |
+| --- | --- | --- | --- |
+| Step 1 | `backender` | [#1 — Validate Danish detection baseline and lock artifacts](https://github.com/manderskov/euai-pii/issues/1) | GitHub |
+| Step 2 | `backender` | [#2 — Implement authenticated block and redact screening API](https://github.com/manderskov/euai-pii/issues/2) | GitHub |
+| Step 3 | `backender` | [#3 — Package service and verify standalone TypeScript consumption](https://github.com/manderskov/euai-pii/issues/3) | GitHub |
+
+Issue #1 produces the evidence required for Gate 1. Issue #2 depends on Gate 1 and produces the service contract required for Gate 2. Issue #3 depends on issue #2 and Gate 2. Each issue requires its own branch/PR and independent Reviewer approval; approval does not authorize merge or deployment.
 
 ## Completion Criteria
 
