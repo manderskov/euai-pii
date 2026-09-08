@@ -41,7 +41,7 @@ class CprRecognizer(EntityRecognizer):
     """Recognize supported CPR-shaped values with plausible dates."""
 
     def __init__(self) -> None:
-        super().__init__(supported_entities=["DK_CPR"], name="DK CPR recognizer")
+        super().__init__(supported_entities=["DK_CPR"], name="DK CPR recognizer", supported_language="da")
 
     def analyze(self, text: str, entities: list[str], nlp_artifacts=None) -> list[RecognizerResult]:
         if "DK_CPR" not in entities:
@@ -57,7 +57,7 @@ class CvrRecognizer(EntityRecognizer):
     """Recognize prefixed Danish CVR-shaped values."""
 
     def __init__(self) -> None:
-        super().__init__(supported_entities=["DK_CVR"], name="DK CVR recognizer")
+        super().__init__(supported_entities=["DK_CVR"], name="DK CVR recognizer", supported_language="da")
 
     def analyze(self, text: str, entities: list[str], nlp_artifacts=None) -> list[RecognizerResult]:
         if "DK_CVR" not in entities:
