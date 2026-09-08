@@ -82,3 +82,14 @@ test("malformed successful envelopes are rejected", async () => {
     mode: "block", profile_id: "da-identifiers-v1", language: "da", text: "safe",
   }, fakeFetch({ ...common, action: "allowed", text: "safe", replacements: [{}] })));
 });
+
+test("duplicate replacement keys are rejected", async () => {
+  const replacement: Replacement = {
+    key: "[[EUAI_PII_11111111111141118111111111111111]]",
+    value: "Anna",
+    entity_types: ["PERSON"],
+  };
+  await assert.rejects(() => screen("http://screening", "secret", {
+    mode: "redact", profile_id: "da-personal-v1", language: "da", text: replacement.key,
+  }, fakeFetch({ ...common, action: "redacted", text: replacement.key, replacements: [replacement, replacement] })));
+});

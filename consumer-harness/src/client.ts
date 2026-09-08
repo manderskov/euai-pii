@@ -137,6 +137,7 @@ function isScreeningResponse(value: unknown): value is ScreeningResponse {
       Array.isArray(body.replacements) &&
       body.replacements.length > 0 &&
       body.replacements.every(isReplacement) &&
+      new Set(body.replacements.map((replacement) => replacement.key)).size === body.replacements.length &&
       hasOnlyKeys(body, ["schema_version", "request_id", "screening_id", "profile_id", "screening_version", "action", "text", "replacements"])
     );
   }

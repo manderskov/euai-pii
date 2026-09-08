@@ -4,6 +4,7 @@ set -eu
 compose="docker compose -f docker-compose.yml"
 cleanup() {
   $compose down --remove-orphans
+  test -z "$($compose ps -q)"
 }
 trap cleanup EXIT INT TERM
 
@@ -64,6 +65,38 @@ large = {**base, "mode": "block", "text": "safe " * 20000}
 with ThreadPoolExecutor(max_workers=2) as pool:
     statuses = list(pool.map(lambda _: request(large)[0], range(2)))
 assert all(status in (200, 503) for status in statuses)
+PY
+$compose exec -T screening python - <<'PY'
+import asyncio
+import time
+from euai_pii.api import CredentialBinding, CredentialStore, ScreenRequest, ScreeningRuntime
+from euai_pii.screening import Profile, ScreeningService
+
+class SlowDetector:
+    supported_entities = ["A"]
+    def analyze(self, text, entities):
+        if text == "slow":
+            time.sleep(11)
+        return []
+
+async def verify_worker_boundary():
+    profile = Profile("da-identifiers-v1", frozenset({"block", "redact"}), (SlowDetector(),), frozenset({"A"}), {"A": 0.5}, "verify")
+    service = ScreeningService({profile.profile_id: profile})
+    credentials = CredentialStore((CredentialBinding("test", frozenset({profile.profile_id}), frozenset({"block", "redact"})),))
+    runtime = ScreeningRuntime(service, credentials, deadline_seconds=0.05)
+    request = ScreenRequest(mode="block", profile_id=profile.profile_id, language="da", text="slow")
+    try:
+        result = await runtime.screen(ScreenRequest(mode="block", profile_id=profile.profile_id, language="da", text="safe"), "test")
+        assert result["action"] == "allowed"
+        try:
+            await runtime.screen(request, "test")
+        except Exception as error:
+            assert getattr(error, "code", None) == "screening_unavailable"
+        assert runtime.ready
+    finally:
+        runtime.close()
+
+asyncio.run(verify_worker_boundary())
 PY
 logs=$($compose logs --no-log-prefix screening)
 case "$logs" in
