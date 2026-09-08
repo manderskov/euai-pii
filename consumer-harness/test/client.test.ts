@@ -15,10 +15,10 @@ function fakeFetch(body: unknown, status = 200): typeof fetch {
 
 const common = {
   schema_version: 1 as const,
-  request_id: "request",
-  screening_id: "screening",
+  request_id: "11111111-1111-4111-8111-111111111111",
+  screening_id: "22222222-2222-4222-8222-222222222222",
   profile_id: "da-identifiers-v1",
-  screening_version: "version",
+  screening_version: "a".repeat(64),
 };
 
 test("blocked responses never enter the model input boundary", async () => {
@@ -75,4 +75,10 @@ test("restoration rejects unknown or modified tokens but allows missing mappings
   assert.equal(restoreExact("No token here", [known]), "No token here");
   assert.throws(() => restoreExact("[[EUAI_PII_99999999999949998999999999999999]]", [known]));
   assert.throws(() => restoreExact("[[EUAI_PII_modified]]", [known]));
+});
+
+test("malformed successful envelopes are rejected", async () => {
+  await assert.rejects(() => screen("http://screening", "secret", {
+    mode: "block", profile_id: "da-identifiers-v1", language: "da", text: "safe",
+  }, fakeFetch({ ...common, action: "allowed", text: "safe", replacements: [{}] })));
 });

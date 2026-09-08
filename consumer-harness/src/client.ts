@@ -105,12 +105,66 @@ function isScreeningResponse(value: unknown): value is ScreeningResponse {
     return false;
   }
   const body = value as Record<string, unknown>;
+  if (
+    body.schema_version !== 1 ||
+    !isUuid(body.request_id) ||
+    !isUuid(body.screening_id) ||
+    typeof body.profile_id !== "string" ||
+    !/^[A-Za-z0-9_-]{1,128}$/.test(body.profile_id) ||
+    typeof body.screening_version !== "string" ||
+    !/^[0-9a-f]{64}$/.test(body.screening_version)
+  ) {
+    return false;
+  }
   const action = body.action;
   if (action === "blocked") {
-    return body.code === "protected_content";
+    return (
+      body.code === "protected_content" &&
+      hasOnlyKeys(body, ["schema_version", "request_id", "screening_id", "profile_id", "screening_version", "action", "code"])
+    );
   }
-  if (action === "allowed" || action === "redacted") {
-    return typeof body.text === "string" && Array.isArray(body.replacements);
+  if (action === "allowed") {
+    return (
+      typeof body.text === "string" &&
+      Array.isArray(body.replacements) &&
+      body.replacements.length === 0 &&
+      hasOnlyKeys(body, ["schema_version", "request_id", "screening_id", "profile_id", "screening_version", "action", "text", "replacements"])
+    );
+  }
+  if (action === "redacted") {
+    return (
+      typeof body.text === "string" &&
+      Array.isArray(body.replacements) &&
+      body.replacements.length > 0 &&
+      body.replacements.every(isReplacement) &&
+      hasOnlyKeys(body, ["schema_version", "request_id", "screening_id", "profile_id", "screening_version", "action", "text", "replacements"])
+    );
   }
   return false;
+}
+
+function isUuid(value: unknown): value is string {
+  return typeof value === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/.test(value);
+}
+
+function isReplacement(value: unknown): value is Replacement {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+  const replacement = value as Record<string, unknown>;
+  return (
+    hasOnlyKeys(replacement, ["key", "value", "entity_types"]) &&
+    typeof replacement.key === "string" &&
+    /^\[\[EUAI_PII_[0-9a-f]{32}\]\]$/.test(replacement.key) &&
+    typeof replacement.value === "string" &&
+    replacement.value.length > 0 &&
+    Array.isArray(replacement.entity_types) &&
+    replacement.entity_types.length > 0 &&
+    replacement.entity_types.every((entity) => typeof entity === "string" && entity.length > 0)
+  );
+}
+
+function hasOnlyKeys(value: Record<string, unknown>, keys: string[]): boolean {
+  const allowed = new Set(keys);
+  return Object.keys(value).every((key) => allowed.has(key));
 }
