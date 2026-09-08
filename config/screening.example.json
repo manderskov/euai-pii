@@ -1,0 +1,67 @@
+{
+  "model_name": "da_core_news_md",
+  "profiles": {
+    "da-identifiers-v1": {
+      "allowed_modes": ["block", "redact"],
+      "categories": [
+        "DK_CPR",
+        "DK_CVR",
+        "EMAIL_ADDRESS",
+        "PHONE_NUMBER",
+        "IBAN_CODE",
+        "CREDIT_CARD",
+        "CONFIGURED_PATTERN"
+      ],
+      "thresholds": {
+        "DK_CPR": 1.0,
+        "DK_CVR": 1.0,
+        "EMAIL_ADDRESS": 0.5,
+        "PHONE_NUMBER": 0.4,
+        "IBAN_CODE": 0.5,
+        "CREDIT_CARD": 0.5,
+        "CONFIGURED_PATTERN": 1.0
+      },
+      "patterns": [
+        {
+          "rule_id": "example-protected-term",
+          "entity_type": "CONFIGURED_PATTERN",
+          "expression": "EXAMPLE_PROTECTED_TERM",
+          "case_sensitive": true
+        }
+      ]
+    },
+    "da-personal-v1": {
+      "allowed_modes": ["block", "redact"],
+      "categories": [
+        "DK_CPR",
+        "DK_CVR",
+        "EMAIL_ADDRESS",
+        "PHONE_NUMBER",
+        "IBAN_CODE",
+        "CREDIT_CARD",
+        "CONFIGURED_PATTERN",
+        "PERSON",
+        "LOCATION"
+      ],
+      "thresholds": {
+        "DK_CPR": 1.0,
+        "DK_CVR": 1.0,
+        "EMAIL_ADDRESS": 0.5,
+        "PHONE_NUMBER": 0.4,
+        "IBAN_CODE": 0.5,
+        "CREDIT_CARD": 0.5,
+        "CONFIGURED_PATTERN": 1.0,
+        "PERSON": 0.85,
+        "LOCATION": 0.85
+      },
+      "patterns": [
+        {
+          "rule_id": "example-protected-term",
+          "entity_type": "CONFIGURED_PATTERN",
+          "expression": "EXAMPLE_PROTECTED_TERM",
+          "case_sensitive": true
+        }
+      ]
+    }
+  }
+}

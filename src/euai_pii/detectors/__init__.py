@@ -4,6 +4,7 @@ from .danish import DANISH_ENTITY_LABELS, DanishNerRecognizer, validate_danish_l
 from .identifiers import CvrRecognizer, CprRecognizer
 from .patterns import ConfiguredPattern, ConfiguredPatternRecognizer
 
+
 __all__ = [
     "ConfiguredPattern",
     "ConfiguredPatternRecognizer",
