@@ -1,0 +1,41 @@
+services:
+  screening:
+    build:
+      context: .
+    configs:
+      - source: screening_config
+        target: /run/config/screening.json
+    secrets:
+      - source: screening_clients
+        target: screening-clients.json
+    environment:
+      SCREENING_PORT: "8080"
+      SCREENING_CONFIG_PATH: /run/config/screening.json
+      SCREENING_CREDENTIALS_PATH: /run/secrets/screening-clients.json
+    expose:
+      - "8080"
+    read_only: true
+    tmpfs:
+      - /tmp:mode=1777,size=64m
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    pids_limit: 64
+    cpus: 2.0
+    mem_limit: 2g
+    restart: on-failure
+    networks:
+      - screening_private
+
+configs:
+  screening_config:
+    file: ./config/screening.example.json
+
+secrets:
+  screening_clients:
+    file: ./config/screening-clients.example.json
+
+networks:
+  screening_private:
+    internal: true
