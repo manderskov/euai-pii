@@ -1,9 +1,0 @@
-{
-  "bindings": [
-    {
-      "credential": "replace-with-a-provisioned-secret",
-      "profiles": ["da-identifiers-v1", "da-personal-v1"],
-      "modes": ["block", "redact"]
-    }
-  ]
-}

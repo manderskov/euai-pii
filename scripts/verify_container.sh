@@ -23,9 +23,12 @@ $compose exec -T screening python -c "import http.client; c=http.client.HTTPConn
 $compose exec -T screening python - <<'PY'
 import http.client
 import json
+import os
 from concurrent.futures import ThreadPoolExecutor
 
-def request(payload, credential="replace-with-a-provisioned-secret", content_type="application/json"):
+credential = os.environ["SCREENING_CREDENTIAL"]
+
+def request(payload, credential=credential, content_type="application/json"):
     connection = http.client.HTTPConnection("127.0.0.1", 8080, timeout=15)
     connection.request("POST", "/v1/screen", body=json.dumps(payload), headers={
         "Authorization": f"Bearer {credential}",
@@ -101,6 +104,7 @@ PY
  $compose exec -T screening python - <<'PY'
 import http.client
 import json
+import os
 import socket
 import time
 
@@ -109,7 +113,7 @@ body = json.dumps({"mode": "redact", "profile_id": "da-personal-v1", "language":
 request = (
     b"POST /v1/screen HTTP/1.1\r\n"
     b"Host: 127.0.0.1:8080\r\n"
-    b"Authorization: Bearer replace-with-a-provisioned-secret\r\n"
+    b"Authorization: Bearer " + os.environ["SCREENING_CREDENTIAL"].encode() + b"\r\n"
     b"Content-Type: application/json\r\n"
     + f"Content-Length: {len(body)}\r\n\r\n".encode()
     + body
@@ -124,7 +128,7 @@ followup = http.client.HTTPConnection("127.0.0.1", 8080, timeout=15)
 followup.request("POST", "/v1/screen", body=json.dumps({
     "mode": "block", "profile_id": "da-identifiers-v1", "language": "da", "text": "safe"
 }), headers={
-    "Authorization": "Bearer replace-with-a-provisioned-secret",
+    "Authorization": "Bearer " + os.environ["SCREENING_CREDENTIAL"],
     "Content-Type": "application/json",
 })
 response = followup.getresponse()

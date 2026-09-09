@@ -1,7 +1,9 @@
+name: euai-pii-test
+
 services:
   screening:
     build:
-      context: ${EUAI_PII_SOURCE:-.}
+      context: ${EUAI_PII_SOURCE}
     configs:
       - source: screening_config
         target: /run/config/screening.json
@@ -10,9 +12,7 @@ services:
       SCREENING_CONFIG_PATH: /run/config/screening.json
       SCREENING_CREDENTIAL: ${SCREENING_CREDENTIAL:?SCREENING_CREDENTIAL must be set in .env}
     ports:
-      - "${SCREENING_BIND_ADDRESS:-127.0.0.1}:${SCREENING_HOST_PORT:-8080}:8080"
-    expose:
-      - "8080"
+      - "${SCREENING_BIND_ADDRESS}:${SCREENING_HOST_PORT}:8080"
     read_only: true
     tmpfs:
       - /tmp:mode=1777,size=64m
@@ -29,7 +29,7 @@ services:
 
 configs:
   screening_config:
-    file: ${SCREENING_CONFIG_FILE:-./config/screening.example.json}
+    file: ${SCREENING_CONFIG_FILE:-/home/morten/code/euai-pii/config/screening.example.json}
 
 networks:
   screening_private:

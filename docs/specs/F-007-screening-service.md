@@ -148,7 +148,7 @@ Safe error envelope: `{"error":{"code":"screening_unavailable","message":"Screen
 
 ## Security and Privacy
 
-- Use TLS for cross-host traffic; same-host isolated container network may use HTTP. No host-published screening port in the deployment baseline. Enforce network access restrictions in addition to application authentication.
+- Use TLS for cross-host traffic; the test and production host ports are private LAN interfaces and require network restrictions in addition to application authentication. Development may use HTTP on the local network.
 - Credentials map to allowed profiles in trusted configuration. Constant-time credential comparison; secrets and profile configuration excluded from errors/access logs.
 - Model/tokenizer assets are installed during build/provisioning. Deny runtime outbound network access, including telemetry and automatic model downloads.
 - Disable body logging, request capture, diagnostic tracing, crash dumps, and content-bearing metrics. Allow only server correlation ID, fixed outcome code, duration, and non-content operational counters.
@@ -168,7 +168,7 @@ Safe error envelope: `{"error":{"code":"screening_unavailable","message":"Screen
 | --- | --- | --- | --- | --- | --- |
 | `SCREENING_PORT` | Internal HTTP port | Screening service | No; default 8080 | No | `8080` |
 | `SCREENING_CONFIG_PATH` | Read-only profiles/rules manifest | Screening service | Yes | Yes; rules may be confidential | `/run/config/screening.json` |
-| `SCREENING_CREDENTIALS_PATH` | Read-only credential-to-profile bindings | Screening service | Yes | Yes | `/run/secrets/screening-clients.json` |
+| `SCREENING_CREDENTIAL` | Bearer credential for configured profiles and modes | Screening service | Yes | Yes | `generated 256-bit secret` |
 
 Model identity, artifact hashes, thresholds, and limits are versioned in configuration/build artifacts, not arbitrary per-request overrides. No new EUAI environment variables in this standalone specification; consumer configuration belongs to later integration work.
 

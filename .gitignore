@@ -5,3 +5,5 @@ __pycache__/
 artifacts/baseline-report.json
 *.egg-info/
 consumer-harness/node_modules/
+.env
+deploy/*/.env
