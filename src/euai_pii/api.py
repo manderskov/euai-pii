@@ -315,11 +315,10 @@ def missing_profile_entities(categories: set[str], model_labels, recognizer_enti
 
 def load_runtime_from_environment() -> ScreeningRuntime | None:
     config_path = os.environ.get("SCREENING_CONFIG_PATH")
-    credentials_path = os.environ.get("SCREENING_CREDENTIALS_PATH")
-    if not config_path or not credentials_path:
+    credential = os.environ.get("SCREENING_CREDENTIAL")
+    if not config_path or not credential:
         return None
     configuration = _load_json(config_path)
-    credentials_config = _load_json(credentials_path)
     from presidio_analyzer import AnalyzerEngine
     from presidio_analyzer.predefined_recognizers import CreditCardRecognizer, EmailRecognizer, IbanRecognizer, PhoneRecognizer
     from presidio_analyzer.nlp_engine import NerModelConfiguration, SpacyNlpEngine
@@ -385,13 +384,12 @@ def load_runtime_from_environment() -> ScreeningRuntime | None:
                 sort_keys=True,
             ),
         )
-    bindings = tuple(
+    bindings = (
         CredentialBinding(
-            credential=binding["credential"],
-            profiles=frozenset(binding["profiles"]),
-            modes=frozenset(binding["modes"]),
-        )
-        for binding in credentials_config.get("bindings", [])
+            credential=credential,
+            profiles=frozenset(profiles),
+            modes=frozenset({"block", "redact"}),
+        ),
     )
     return ScreeningRuntime(ScreeningService(profiles), CredentialStore(bindings))
 

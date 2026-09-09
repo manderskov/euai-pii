@@ -13,26 +13,51 @@ The image installs the exact Python/package/model artifacts from
 Linux capabilities, uses a read-only root filesystem, and has no runtime model
 download path.
 
-## Local Private Network
+## Deployment Profiles
 
-The baseline Compose file mounts read-only configuration and credentials,
-publishes no host port, and uses an internal Docker network:
+The service supports three deployment profiles. Each profile has its own `.env`
+file, credential, port, and Compose project directory:
+
+| Profile | Start method | Directory | Host port |
+| --- | --- | --- | ---: |
+| Development | VS Code integrated terminal | repository root | 6010 |
+| Test | Docker Compose | `~/test/euai-pii` | 6110 |
+| Production | Docker Compose | `~/prod/euai-pii` | 6210 |
+
+The screening credential is supplied as `SCREENING_CREDENTIAL` through the
+profile's ignored `.env` file. Do not commit `.env` files or credentials.
+
+Development:
 
 ```sh
-docker compose up -d
-docker compose ps
-docker compose logs --no-log-prefix screening
-docker compose down --remove-orphans
+./deploy-dev.sh
 ```
 
-Replace the example credential in `config/screening-clients.example.json` through
-the operator's secret provisioning process before any non-synthetic use. Do not
-commit real credentials or customer text.
+Test and production deployment directories should contain the corresponding
+Compose file and `.env` copied from the templates under `deploy/`:
 
-The service is reachable only by another container attached to the private
-network. Cross-host deployments require TLS and network restrictions in addition
-to the bearer credential. The screening port is intentionally not published to
-the host.
+```sh
+./deploy-test.sh
+./deploy-prod.sh
+```
+
+On the first run, each script creates its deployment directory and `.env` from
+the matching template, then exits. Replace the placeholder with a separately
+generated credential and run the script again. The test profile may use
+synthetic data; production requires an operator-provisioned secret and approved
+network access. On later runs, the scripts refresh the Compose file, rebuild the
+image, and recreate changed containers without overwriting `.env`.
+
+```sh
+cd ~/test/euai-pii && docker compose up -d && docker compose ps
+cd ~/prod/euai-pii && docker compose up -d && docker compose ps
+```
+
+Stop a profile with `docker compose down --remove-orphans` from its directory.
+
+Test and production are reachable at `http://apex.lan:6110` and
+`http://apex.lan:6210`. Cross-host deployments require TLS and network
+restrictions in addition to the bearer credential.
 
 ## Contract Smoke Test
 

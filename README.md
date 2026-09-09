@@ -37,12 +37,12 @@ python3 -m venv .venv
 .venv/bin/pip install --no-deps -e '.[dev]'
 ```
 
-Run the deterministic tests and the synthetic detector evaluation:
+Run the deterministic tests and start the development service from VS Code:
 
 ```sh
 .venv/bin/pytest -q
-.venv/bin/python scripts/evaluate_baseline.py --model da_core_news_md
-.venv/bin/uvicorn euai_pii.api:app --host 127.0.0.1 --port 8080
+set -a; source .env; set +a
+.venv/bin/uvicorn euai_pii.api:app --host 127.0.0.1 --port 6010
 ```
 
 The model must be installed during provisioning or image build. The evaluator
@@ -51,11 +51,17 @@ inputs, and process RSS; it does not download models at runtime. Results from th
 current baseline are recorded in `docs/evaluation/F-007-baseline.md` and remain
 subject to the Gate 1 acceptance review.
 
-The API requires `SCREENING_CONFIG_PATH` and `SCREENING_CREDENTIALS_PATH` at
-runtime. Safe configuration shapes are provided in `config/`; replace the example
-credential before use. Deployed interactive documentation and public OpenAPI
+The API requires `SCREENING_CONFIG_PATH` and `SCREENING_CREDENTIAL` at runtime.
+Copy `.env.example` to `.env`, generate a local credential, and replace the
+placeholder. Deployed interactive documentation and public OpenAPI
 routes are disabled; the schema is available only through authenticated
 `/openapi.json`.
+
+Deployment profiles and their ports are documented in
+[`docs/deployment/F-007-private-service.md`](docs/deployment/F-007-private-service.md).
+Use `./deploy-dev.sh` from the VS Code terminal for development, or
+`./deploy-test.sh` and `./deploy-prod.sh` to build and update the Docker
+deployments.
 
 Container and TypeScript consumer verification instructions are in
 [`docs/deployment/F-007-private-service.md`](docs/deployment/F-007-private-service.md).
