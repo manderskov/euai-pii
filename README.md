@@ -6,7 +6,8 @@ The service supports blocking protected content or replacing it with unique,
 request-local placeholders while returning the original values separately to a
 trusted caller. Danish NER complements deterministic identifier detection.
 
-Status: documentation baseline. No application has been implemented or deployed.
+Status: standalone service implementation and private container are available;
+Gate 2 acceptance and production deployment remain pending.
 
 ## Documentation
 
@@ -18,10 +19,10 @@ Status: documentation baseline. No application has been implemented or deployed.
 ## Stack
 
 Python, FastAPI/Pydantic, Presidio Analyzer and Anonymizer, spaCy with a Danish NER
-pipeline, pytest, and a private CPU Linux Docker container. The Danish evaluation
-baseline is da_core_news_md; model license acceptance and domain testing are
-required before release. Exact compatible versions will be locked during the
-first implementation stage.
+ pipeline, pytest, and a private CPU Linux Docker container. The Danish evaluation
+ baseline is da_core_news_md; model license acceptance and domain testing are
+ required before release. Exact compatible versions are recorded in
+ `requirements.lock`.
 
 EUAI API remains a separate TypeScript/Fastify/Mastra application. This repository
 does not change its current block-only policy or saved-chat behavior.
@@ -53,4 +54,8 @@ subject to the Gate 1 acceptance review.
 The API requires `SCREENING_CONFIG_PATH` and `SCREENING_CREDENTIALS_PATH` at
 runtime. Safe configuration shapes are provided in `config/`; replace the example
 credential before use. Deployed interactive documentation and public OpenAPI
-routes are disabled.
+routes are disabled; the schema is available only through authenticated
+`/openapi.json`.
+
+Container and TypeScript consumer verification instructions are in
+[`docs/deployment/F-007-private-service.md`](docs/deployment/F-007-private-service.md).
