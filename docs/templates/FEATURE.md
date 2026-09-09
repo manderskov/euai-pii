@@ -24,11 +24,19 @@ Do not describe how the feature will be implemented.
 
 List the observable behaviors or outcomes the feature must provide.
 
+Give each requirement a stable feature-local ID using this format:
+
+`- **FR-001:** Requirement text.`
+
+The complete reference is the feature ID plus the requirement ID, for example `F-003-FR-001`.
+
 Requirements should:
 - Be clear enough for the Tech Lead to design a solution without inventing product behavior.
 - Describe what must happen, not how it is implemented.
 - Be individually understandable and testable at the product level.
 - Avoid unnecessary detail that does not materially affect the feature.
+- Keep their IDs when wording changes.
+- Never reuse an ID after its requirement is removed.
 
 Use concise bullets.
 

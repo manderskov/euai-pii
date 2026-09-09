@@ -189,25 +189,35 @@ Insert gates only between major implementation stages where human validation mat
 
 Use this format:
 
-### Gate N — Short Name
+### F-###-G-## — Short Name
 
 **After step(s):** Identify the implementation steps that must be complete.
 
-**Review / test**
+**Purpose**
 
-State exactly what the user or explicitly designated human reviewer should inspect or test.
+State the material risk or assumption this human gate validates.
 
-**Expected result**
+**Test plan**
 
-State the observable result required to pass.
+Link to the executable plan under `../tests/F-###-feature-name/G-##-short-name.md`.
+
+**Pass authority**
+
+Name the user or explicitly designated human role permitted to pass the gate.
 
 **Blocks**
 
 State which later implementation step or steps must not begin until this gate passes.
 
+**Result source**
+
+Link the implementation pull request that will record the result. Use a dedicated gate issue only when the gate spans multiple pull requests or repositories, occurs after merge, blocks multiple independent work items, or represents final end-to-end acceptance. If the result source has not been created, state that it will be assigned with the implementation issues.
+
 Do not add a gate after every trivial step.
 
-If no intermediate manual gate is justified, state that only the final completion review is required.
+Create every linked test plan from `docs/templates/MANUAL-TEST-GATE.md` before creating implementation issues. The specification owns why and when the gate occurs; the test plan owns how it is executed; GitHub owns the execution result and current status. Do not duplicate detailed test cases in this specification.
+
+If no formal manual gate is justified, state that no manual gate is required; independent Reviewer approval still applies. If final human acceptance is required, define it as a formal gate with the same complete test plan and tracking rules.
 
 ## Implementation Issues
 
@@ -225,8 +235,10 @@ Rules:
 - The assigned skill must match the implementation-plan step and GitHub issue.
 - GitHub is the source of truth for issue status. Do not copy open/in-progress/done status into this file.
 - Each implementation issue normally uses one issue-specific branch and one pull request.
+- Later issues must identify blocking gates by stable gate ID and link their GitHub result source.
 - The Developer is authorized by this workflow to create/switch to that branch, commit issue-scoped work, push the branch, and open/update the pull request.
 - The pull request must reference its implementation issue and should use `Closes #<issue-number>` when merge should close it.
+- When the pull request is ready, the Developer automatically starts a separate Reviewer execution. On `RETURN`, it may make and re-submit up to three authorized correction attempts, stopping earlier for findings outside its scope or authority or requiring human input.
 - Reviewer feedback and approval status are normally recorded in pull request reviews/comments.
 - Use implementation issue comments for review only when a pull request genuinely cannot or should not be created.
 - Do not copy branch state, pull request state, review findings, or review status into this specification.
